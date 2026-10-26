@@ -153,20 +153,12 @@ def _model_row(item: dict[str, Any]) -> dict[str, Any]:
         language_text = ", ".join(name for name in names if name)
     else:
         language_text = str(languages)
-    ratio = item.get("credit_ratio")
-    if ratio is None:
-        rates = item.get("model_rates")
-        if isinstance(rates, dict):
-            ratio = rates.get("character_cost_multiplier")
-    if ratio is None:
-        ratio = item.get("token_cost_factor")
     return {
         "provider": item.get("provider", ""),
         "model_id": str(item.get("model_id") or item.get("id") or ""),
         "name": str(item.get("name") or item.get("model_id") or ""),
         "description": str(item.get("description") or ""),
         "tts": item.get("can_do_text_to_speech", True),
-        "credit_ratio": ratio,
         "languages": language_text,
     }
 
@@ -271,8 +263,7 @@ def _render_voices(catalog: dict[str, Any]) -> None:
 def _render_benchmark(api_key: str, base_url: str, catalog: dict[str, Any]) -> None:
     st.write(
         "Submits one speech job and polls until it finishes. "
-        f"Polling is every {POLL_SECONDS:.0f}s, so completion time is accurate to about that interval. "
-        "Each run spends credits."
+        f"Polling is every {POLL_SECONDS:.0f}s, so completion time is accurate to about that interval."
     )
 
     models = [_model_row(item) for item in catalog["models"]]
@@ -420,7 +411,6 @@ def _run_once(
         "accept_s": None,
         "total_s": None,
         "polls": 0,
-        "credits": None,
         "audio_url": "",
         "error": "",
     }
@@ -475,7 +465,6 @@ def _run_once(
         time.sleep(POLL_SECONDS)
 
     run["total_s"] = round(time.perf_counter() - started, 2)
-    run["credits"] = task.get("credits_deducted")
     run["characters_used"] = task.get("characters_used")
     error = task.get("error")
     if error and not run["error"]:
@@ -521,11 +510,10 @@ def _remember_audio(client: TtsClient, run: dict[str, Any]) -> None:
 
 
 def _show_run(run: dict[str, Any]) -> None:
-    cols = st.columns(4)
+    cols = st.columns(3)
     cols[0].metric("Accept", _seconds(run.get("accept_s")))
     cols[1].metric("Total", _seconds(run.get("total_s")))
     cols[2].metric("Status", str(run.get("status") or ""))
-    cols[3].metric("Credits", "—" if run.get("credits") is None else str(run.get("credits")))
     if run.get("error"):
         st.error(run["error"])
 
