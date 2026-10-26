@@ -341,9 +341,6 @@ def _render_benchmark(api_key: str, base_url: str, catalog: dict[str, Any]) -> N
     stability = stability_col.slider("Stability", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
     similarity = similarity_col.slider("Similarity", min_value=0.0, max_value=1.0, value=0.75, step=0.01)
     repeats = st.number_input("Repeats", min_value=1, max_value=5, value=1)
-    ratio = model.get("credit_ratio")
-    estimate = len(text) * float(ratio) if ratio not in (None, "") else len(text)
-    st.caption(f"{len(text)} characters. Rough credit estimate for one run: {estimate:g}.")
 
     if st.button("Run speech test", type="primary", disabled=not (voice_id and text.strip() and language_code)):
         client = TtsClient(api_key, base_url)
@@ -467,7 +464,7 @@ def _run_once(
         status = str(task.get("status") or "")
         percent = task.get("progress")
         shown = int(percent) if isinstance(percent, (int, float)) else min(95, 8 + run["polls"] * 5)
-        progress.progress(max(8, min(99, shown)), text=f"{status or 'working'} · poll {run['polls']}")
+        progress.progress(max(8, min(99, shown)), text="")
         if status.lower() in TERMINAL_STATUSES:
             run["status"] = status
             break
